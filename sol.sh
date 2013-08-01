@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $# -lt 1 ]
+then
+	echo "Uso: $0 <aplicación>"
+	exit 1
+fi
+
 PSFILE=$(mktemp /tmp/solXXXX)
 
 ps x -o "pid,comm" | grep -i " $1$" > $PSFILE
