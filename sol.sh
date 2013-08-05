@@ -14,23 +14,21 @@ then
 	exit 0
 fi
 
-PID_PAT=$(echo $PIDS | tr " " "|")
-
 WFILE=$(mktemp /tmp/solwXXXX)
-wmctrl -pl | awk  -v pat=$PID_PAT '{if (match ($3, pat)) print $0}' > $WFILE
+wmctrl -pl | awk  -v pat="$PIDS" -f sol.awk > $WFILE
 
 case "$(cat $WFILE | wc -l)" in
 0) # Proceso sin ventana, no hacer nada
 	;;
 
-1) # Una sola ventana: se activa.
-	wmctrl -ia $(cut -f1 -d\  $WFILE)
+1|2) # Una sola ventana: se activa.
+	wmctrl -ia $(head -1 $WFILE)
 	;;
 
 *) # Más de una ventana: hay que elegir qué ventana mostrar.
-	V=$(awk '{print $1; $1=$2=$3=$4=""; sub(/^  */,"", $0); print $0}' $WFILE |\
-     	    zenity --list --title "Elige ventana" --text=$1 \
-       		--column "Código" --column "Título" --hide-column=1)
+	V=$(cat $WFILE | \
+     	 zenity --list --title "Elige ventana" --text=$1 \
+       	     --column "Código" --column "Título" --hide-column=1)
 
 	[ -n "$V" ] && wmctrl -ia $V # Si se ha elegido una ventana se muestra.
 	;;
