@@ -6,31 +6,29 @@ then
 	exit 1
 fi
 
-PSFILE=$(mktemp /tmp/solXXXX)
-
-ps x -o "pid,comm" | grep -i " $1$" > $PSFILE
+PIDS=$(pidof $1)
 
 if [ $? != 0 ] # No hay proceso para la aplicación: se lanza.
 then
 	$1 &
-	rm -f $PSFILE
 	exit 0
 fi
 
-WFILE=$(mktemp /tmp/solwXXXX)
+PID_PAT=$(echo $PIDS | tr " " "|")
 
-wmctrl -pl | sort -bg --key=3 | join -1 1 -2 3 $PSFILE - > $WFILE
+WFILE=$(mktemp /tmp/solwXXXX)
+wmctrl -pl | awk  -v pat=$PID_PAT '{if (match ($3, pat)) print $0}' > $WFILE
 
 case "$(cat $WFILE | wc -l)" in
 0) # Proceso sin ventana, no hacer nada
 	;;
 
 1) # Una sola ventana: se activa.
-	wmctrl -ia $(cut -f3 -d\  $WFILE)
+	wmctrl -ia $(cut -f1 -d\  $WFILE)
 	;;
 
 *) # Más de una ventana: hay que elegir qué ventana mostrar.
-	V=$(awk '{print $3; $1=$2=$3=$4=$5=""; sub(/^  */,"", $0); print $0}' $WFILE |\
+	V=$(awk '{print $1; $1=$2=$3=$4=""; sub(/^  */,"", $0); print $0}' $WFILE |\
      	    zenity --list --title "Elige ventana" --text=$1 \
        		--column "Código" --column "Título" --hide-column=1)
 
@@ -38,4 +36,4 @@ case "$(cat $WFILE | wc -l)" in
 	;;
 esac
 
-rm -f $PSFILE $WFILE
+rm -f $WFILE
