@@ -15,7 +15,7 @@ then
 fi
 
 WFILE=$(mktemp /tmp/solwXXXX)
-wmctrl -pl | awk  -v pat="$PIDS" -f sol.awk > $WFILE
+wmctrl -pl | awk  -v pat="$PIDS" -f $(dirname $0)/sol.awk > $WFILE
 
 case "$(cat $WFILE | wc -l)" in
 0) # Proceso sin ventana, no hacer nada
